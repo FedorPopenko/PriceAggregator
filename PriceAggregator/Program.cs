@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PriceAggregator.DAL;
+using PriceAggregator.Integrations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContextFactory<GamesDB>(o => o.UseInMemoryDatabase("MyDatabase"));
+builder.Services.AddSingleton<IPriceSearcher,PriceSearcher>();
 
 var app = builder.Build();
 

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PriceAggregator.DAL;
+using PriceAggregator.Integrations;
+using System.Reflection;
 
 namespace PriceAggregator.Controllers
 {
@@ -7,29 +9,18 @@ namespace PriceAggregator.Controllers
     [Route("games-prices")]
     public class PriceAggregatorController : ControllerBase
     {
-        private static readonly Game _game =
-            new Game
-            {
-                Title = "Game of War",
-                Prices = [
-                    new GamePrice
-                    {
-                        Country = "USA",
-                        Price = 15,
-                        Currency = "$"
-                    }
-                ]
-            };
-
         private readonly ILogger<PriceAggregatorController> _logger;
         private readonly GamesDB _gamesDB;
+        private readonly IPriceSearcher _priceSearcher;
 
         public PriceAggregatorController(
             ILogger<PriceAggregatorController> logger,
-            GamesDB gamesDB)
+            GamesDB gamesDB,
+            IPriceSearcher priceSearcher)
         {
             _logger = logger;
             _gamesDB = gamesDB;
+            _priceSearcher = priceSearcher;
         }
 
         [HttpGet("{gameName}")]
@@ -39,7 +30,30 @@ namespace PriceAggregator.Controllers
             var gameDto = _gamesDB.Games.Where(x => x.TitleIndex == searchPhrase).FirstOrDefault();
             if (gameDto == null)
             {
-                return null;
+                var searchResult = _priceSearcher.GetGamePrices(gameName);
+                if(searchResult == null || !searchResult.Any())
+                {
+                    return null;
+                }
+                gameDto = new GameDTO
+                {
+                    Title = searchResult.First().title,
+                    TitleIndex = GetSearchPhrase(searchResult.First().title),
+                };
+                _gamesDB.Games.Add(gameDto);
+                _gamesDB.SaveChanges();
+                foreach (var price in searchResult)
+                {
+                    _gamesDB.Prices.Add(new PriceDTO
+                    {
+                        Price = 5051,//price.price,
+                        Country = price.country,
+                        Currency ="sosi",
+                        GameId = gameDto.Id
+                    });
+                }
+                _gamesDB.SaveChanges();
+
             }
             var priceDtos = _gamesDB.Prices.Where(x => x.GameId == gameDto.Id).ToList();
             return new Game
