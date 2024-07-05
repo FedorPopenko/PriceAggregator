@@ -46,9 +46,9 @@ namespace PriceAggregator.Controllers
                 {
                     _gamesDB.Prices.Add(new PriceDTO
                     {
-                        Price = 5051,//price.price,
+                        Price = price.price,
                         Country = price.country,
-                        Currency ="sosi",
+                        Currency =price.currency,
                         GameId = gameDto.Id
                     });
                 }
