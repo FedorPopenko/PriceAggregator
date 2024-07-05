@@ -12,6 +12,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContextFactory<GamesDB>(o => o.UseInMemoryDatabase("MyDatabase"));
 builder.Services.AddSingleton<IPriceSearcher,PriceSearcher>();
+builder.Services.AddSingleton<ICurrencyRatesAPI, CurrencyRatesAPI>();
 
 var app = builder.Build();
 
