@@ -1,20 +1,20 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PriceAggregator.DAL;
 using PriceAggregator.Integrations;
-using System.Reflection;
 
 namespace PriceAggregator.Controllers
 {
     [ApiController]
-    [Route("games-prices")]
-    public class PriceAggregatorController : ControllerBase
+    [Route("games")]
+    public class GamesController : ControllerBase
     {
-        private readonly ILogger<PriceAggregatorController> _logger;
+        private readonly ILogger<GamesController> _logger;
         private readonly GamesDB _gamesDB;
         private readonly IPriceSearcher _priceSearcher;
 
-        public PriceAggregatorController(
-            ILogger<PriceAggregatorController> logger,
+        public GamesController(
+            ILogger<GamesController> logger,
             GamesDB gamesDB,
             IPriceSearcher priceSearcher)
         {
@@ -23,15 +23,15 @@ namespace PriceAggregator.Controllers
             _priceSearcher = priceSearcher;
         }
 
-        [HttpGet("{gameName}")]
-        public Game Get(string gameName)
+        [HttpGet("prices/{gameName}")]
+        public async Task<Game> GetPrices(string gameName)
         {
             var searchPhrase = GetSearchPhrase(gameName);
             var gameDto = _gamesDB.Games.Where(x => x.TitleIndex == searchPhrase).FirstOrDefault();
             if (gameDto == null)
             {
-                var searchResult = _priceSearcher.GetGamePrices(gameName);
-                if(searchResult == null || !searchResult.Any())
+                var searchResult = await _priceSearcher.GetGamePrices(gameName);
+                if (searchResult == null || !searchResult.Any())
                 {
                     return null;
                 }
@@ -48,7 +48,7 @@ namespace PriceAggregator.Controllers
                     {
                         Price = price.price,
                         Country = price.country,
-                        Currency =price.currency,
+                        Currency = price.currency,
                         GameId = gameDto.Id
                     });
                 }
@@ -67,7 +67,16 @@ namespace PriceAggregator.Controllers
                 })
             };
         }
-
+        [HttpGet("titles/{searchPhrase}")]
+        public async Task<List<string>> GetTitles(string searchPhrase)
+        {
+            var searchIndex = GetSearchPhrase(searchPhrase);
+            var gamesDto = await _gamesDB.Games.Where(g =>
+                g.TitleIndex.Contains(searchIndex))
+                .ToListAsync();
+            var titles = gamesDto.Select(g => g.Title).ToList();
+            return titles;
+        }
         [HttpPost()]
         public void Get(Game game)
         {
