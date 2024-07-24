@@ -27,24 +27,32 @@ namespace PriceAggregator.Controllers
         public async Task<Game> GetPrices(string gameName)
         {
             var searchPhrase = GetSearchPhrase(gameName);
-            var gameDto = _gamesDB.Games.Where(x => x.TitleIndex == searchPhrase).FirstOrDefault();
-            if (gameDto == null)
+            var gameDto = await _gamesDB.Games.Where(x => x.TitleIndex == searchPhrase).FirstOrDefaultAsync();
+            var priceDtos = gameDto == null ?
+                new() :
+                await _gamesDB.Prices.Where(x => x.GameId == gameDto.Id).ToListAsync();
+
+            if (gameDto == null || !priceDtos.Any())
             {
-                var searchResult = await _priceSearcher.GetGamePrices(gameName);
+                var searchResult = await _priceSearcher.GetGamePrices(gameName.ToLower());
                 if (searchResult == null || !searchResult.Any())
                 {
                     return null;
                 }
-                gameDto = new GameDTO
+                if (gameDto == null)
                 {
-                    Title = searchResult.First().title,
-                    TitleIndex = GetSearchPhrase(searchResult.First().title),
-                };
-                _gamesDB.Games.Add(gameDto);
-                _gamesDB.SaveChanges();
+                    gameDto = new GameDTO
+                    {
+                        Title = searchResult.First().title,
+                        TitleIndex = GetSearchPhrase(searchResult.First().title),
+                    };
+                    await _gamesDB.Games.AddAsync(gameDto);
+                    await _gamesDB.SaveChangesAsync();
+                }
+
                 foreach (var price in searchResult)
                 {
-                    _gamesDB.Prices.Add(new PriceDTO
+                    priceDtos.Add(new PriceDTO
                     {
                         Price = price.price,
                         Country = price.country,
@@ -52,10 +60,9 @@ namespace PriceAggregator.Controllers
                         GameId = gameDto.Id
                     });
                 }
-                _gamesDB.SaveChanges();
-
+                await _gamesDB.Prices.AddRangeAsync(priceDtos);
+                await _gamesDB.SaveChangesAsync();
             }
-            var priceDtos = _gamesDB.Prices.Where(x => x.GameId == gameDto.Id).ToList();
             return new Game
             {
                 Title = gameDto.Title,
@@ -67,6 +74,7 @@ namespace PriceAggregator.Controllers
                 })
             };
         }
+
         [HttpGet("titles/{searchPhrase}")]
         public async Task<List<string>> GetTitles(string searchPhrase)
         {
@@ -77,6 +85,7 @@ namespace PriceAggregator.Controllers
             var titles = gamesDto.Select(g => g.Title).ToList();
             return titles;
         }
+
         [HttpPost()]
         public void Get(Game game)
         {
