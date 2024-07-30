@@ -10,6 +10,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContextFactory<GamesDB>(o => o.UseInMemoryDatabase("MyDatabase"));
 builder.Services.AddSingleton<IPriceSearcher, PriceSearcher>();
 builder.Services.AddSingleton<ICurrencyRatesAPI, CurrencyRatesAPI>();
+builder.Services.AddSingleton<ICurrencyDictionary, CurrencyDictionary>();
 builder.Services.AddHostedService<NamesUpdater>();
 builder.Services.AddCors(b =>
     b.AddDefaultPolicy(p =>
