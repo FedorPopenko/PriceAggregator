@@ -23,7 +23,7 @@ namespace PriceAggregator.DAL
     {
         public int Id { get; set; }
         public decimal Price { get; set; }
-        public string Currency { get; set; }
+        public string? Currency { get; set; }
         public string Country { get; set; }
         public int GameId { get; set; }
     }

@@ -31,7 +31,5 @@
         public string country { get; set; }
         public string title { get; set; }
         public decimal price { get; set; }
-        public string currency { get; set; }
-        public string publisher { get; set; }
     }
 }

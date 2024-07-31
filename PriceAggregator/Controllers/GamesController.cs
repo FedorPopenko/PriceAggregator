@@ -12,15 +12,18 @@ namespace PriceAggregator.Controllers
         private readonly ILogger<GamesController> _logger;
         private readonly GamesDB _gamesDB;
         private readonly IPriceSearcher _priceSearcher;
+        private readonly ICurrencyDictionary _currencyDictionary;
 
         public GamesController(
             ILogger<GamesController> logger,
             GamesDB gamesDB,
-            IPriceSearcher priceSearcher)
+            IPriceSearcher priceSearcher,
+            ICurrencyDictionary currencyDictionary)
         {
             _logger = logger;
             _gamesDB = gamesDB;
             _priceSearcher = priceSearcher;
+            _currencyDictionary = currencyDictionary;
         }
 
         [HttpGet("prices/{gameName}")]
@@ -52,11 +55,12 @@ namespace PriceAggregator.Controllers
 
                 foreach (var price in searchResult)
                 {
+                    var currency = _currencyDictionary.GetCurrency(price.country);
                     priceDtos.Add(new PriceDTO
                     {
                         Price = price.price,
                         Country = price.country,
-                        Currency = price.currency,
+                        Currency = currency,
                         GameId = gameDto.Id
                     });
                 }
