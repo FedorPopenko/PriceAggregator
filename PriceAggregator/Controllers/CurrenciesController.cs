@@ -10,6 +10,7 @@ namespace PriceAggregator.Controllers
     {
         private readonly ILogger<CurrenciesController> _logger;
         private readonly ICurrencyRatesAPI _currencyRatesAPI;
+        private readonly ICurrencyDictionary _currencyDictionary;
         private readonly Dictionary<string, string> _currenciesToCurrencyTag = new()
         {
             { "$", "USD" },
@@ -18,10 +19,18 @@ namespace PriceAggregator.Controllers
 
         public CurrenciesController(
             ILogger<CurrenciesController> logger,
-            ICurrencyRatesAPI currencyRatesAPI)
+            ICurrencyRatesAPI currencyRatesAPI,
+            ICurrencyDictionary currencyDictionary)
         {
             _logger = logger;
             _currencyRatesAPI = currencyRatesAPI;
+            _currencyDictionary = currencyDictionary;
+        }
+
+        [HttpGet()]
+        public async Task<List<string>> Carrencies()
+        {
+            return _currencyDictionary.Currencies();
         }
 
         [HttpGet("currentRate")]
