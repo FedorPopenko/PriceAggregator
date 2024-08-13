@@ -83,10 +83,14 @@ namespace PriceAggregator.Controllers
             };
             if (conversionCurrency != null)
             {
-                foreach (var price in result.Prices) 
+                foreach (var price in result.Prices)
                 {
-                    price.Price = _priceCalculator.ConvertPrice(price.Price, price.Currency, conversionCurrency);
-                    price.Currency = conversionCurrency;
+                    var convertedPrice = await _priceCalculator.ConvertPrice(price.Price, price.Currency, conversionCurrency);
+                    if (convertedPrice != null)
+                    {
+                        price.Price = convertedPrice.Value;
+                        price.Currency = conversionCurrency;
+                    }
                 }
             }
             return result;
