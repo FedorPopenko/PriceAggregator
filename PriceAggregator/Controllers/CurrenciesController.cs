@@ -28,7 +28,7 @@ namespace PriceAggregator.Controllers
         }
 
         [HttpGet()]
-        public async Task<List<string>> Carrencies()
+        public async Task<List<string>> Currencies()
         {
             return _currencyDictionary.Currencies();
         }
