@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PriceAggregator.DAL;
+using PriceAggregator.Domain;
 using PriceAggregator.Integrations;
 
 namespace PriceAggregator.Controllers
@@ -13,21 +14,24 @@ namespace PriceAggregator.Controllers
         private readonly GamesDB _gamesDB;
         private readonly IPriceSearcher _priceSearcher;
         private readonly ICurrencyDictionary _currencyDictionary;
+        private readonly IPriceCalculator _priceCalculator;
 
         public GamesController(
             ILogger<GamesController> logger,
             GamesDB gamesDB,
             IPriceSearcher priceSearcher,
-            ICurrencyDictionary currencyDictionary)
+            ICurrencyDictionary currencyDictionary,
+            IPriceCalculator priceCalculator)
         {
             _logger = logger;
             _gamesDB = gamesDB;
             _priceSearcher = priceSearcher;
             _currencyDictionary = currencyDictionary;
+            _priceCalculator = priceCalculator;
         }
 
         [HttpGet("prices/{gameName}")]
-        public async Task<Game> GetPrices(string gameName)
+        public async Task<Game> GetPrices(string gameName, string? conversionCurrency)
         {
             var searchPhrase = GetSearchPhrase(gameName);
             var gameDto = await _gamesDB.Games.Where(x => x.TitleIndex == searchPhrase).FirstOrDefaultAsync();
@@ -67,7 +71,7 @@ namespace PriceAggregator.Controllers
                 await _gamesDB.Prices.AddRangeAsync(priceDtos);
                 await _gamesDB.SaveChangesAsync();
             }
-            return new Game
+            var result = new Game
             {
                 Title = gameDto.Title,
                 Prices = priceDtos.Select(x => new GamePrice
@@ -75,8 +79,21 @@ namespace PriceAggregator.Controllers
                     Country = x.Country,
                     Price = x.Price,
                     Currency = x.Currency
-                })
+                }).ToList()
             };
+            if (conversionCurrency != null)
+            {
+                foreach (var price in result.Prices)
+                {
+                    var convertedPrice = await _priceCalculator.ConvertPrice(price.Price, price.Currency, conversionCurrency);
+                    if (convertedPrice != null)
+                    {
+                        price.Price = convertedPrice.Value;
+                        price.Currency = conversionCurrency;
+                    }
+                }
+            }
+            return result;
         }
 
         [HttpGet("titles/{searchPhrase}")]

@@ -5,6 +5,7 @@ namespace PriceAggregator.Integrations
     public interface ICurrencyRatesAPI
     {
         Task<string?> GetCurrencyRate(string baseCurrency, string quoteCurrency, DateTime startDate, DateTime endDate);
+        Task<List<Currency>?> GetCurrencyRates();
     }
 
     public class CurrencyRatesAPI : ICurrencyRatesAPI
@@ -26,6 +27,28 @@ namespace PriceAggregator.Integrations
             var response = await client.GetFromJsonAsync<CurrenciesResponse>(query);
             return response?.response.FirstOrDefault()?.average_ask;
         }
+        public async Task<List<Currency>?> GetCurrencyRates()
+        {
+            using var client = new HttpClient();
+            var response = await client.GetFromJsonAsync<List<Root>>(new Uri("https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/en/json/"));
+            return response?.First().currencies;
+        }
+
+    }
+
+    public class Currency
+    {
+        public string code { get; set; }
+        public string name { get; set; }
+        public int quantity { get; set; }
+        public double rate { get; set; }
+        public DateTime date { get; set; }
+        public DateTime validFromDate { get; set; }
+    }
+
+    class Root
+    {
+        public List<Currency> currencies { get; set; }
     }
 
     public class CurrenciesResponseBody

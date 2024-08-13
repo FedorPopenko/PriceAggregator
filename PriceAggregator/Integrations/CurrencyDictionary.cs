@@ -2,6 +2,7 @@
 {
     public interface ICurrencyDictionary
     {
+        List<string> Currencies();
         string? GetCurrency(string country);
     }
 
@@ -84,16 +85,23 @@
             { "Thailand", "THB" },
             { "Vietnam", "VND" },
         };
+
         public CurrencyDictionary(ILogger<CurrencyDictionary> logger)
         {
             _logger = logger;
         }
+
         public string? GetCurrency(string country)
         {
             if (_countriesToCurrencies.TryGetValue(country, out var currency))
                 return currency;
             _logger.LogError($"Not found country {country}");
             return null;
+        }
+
+        public List<string> Currencies()
+        {
+            return _countriesToCurrencies.Values.Distinct().Order().ToList();
         }
     }
 }
