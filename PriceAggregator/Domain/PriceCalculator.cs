@@ -28,6 +28,7 @@ namespace PriceAggregator.Domain
             }
             var lariPrice = (decimal)fromCurrencyRate.rate / fromCurrencyRate.quantity * price;
             var result = lariPrice / (decimal)toCurrencyRate.rate * toCurrencyRate.quantity;
+            result = Math.Round(result, 2);
             return result;
         }
     }
